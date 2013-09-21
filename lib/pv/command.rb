@@ -19,7 +19,22 @@ module Pv
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
     def show story_id, output=STDOUT
       story = Story.find(story_id)
-      # output << (Story.find(story_id)
+      full_render(story)
+    end
+
+    desc "branch STORY_ID", "Create git branch and checkout based on story ID and desc."
+    def branch story_id, output=STDOUT
+      story = Story.find(story_id) or raise "Error: Story not found"
+      initials = File.read(File.expand_path "~/.initials").split("\n").join("_")
+      title = story.name.gsub(/[^A-Za-z0-9\/:\.,]/, '-').split(/\W+/).join('-').squeeze('-')
+      a = ask "== Is the following title acceptable? {ENTER for yes}\n#{title}"
+      unless a.empty? || a =~ /y/i
+        title = ask "Enter a better title: > "
+      end
+
+      command = "git checkout -b #{[initials, story_id, title].join('_')}"
+
+      system(command)
       full_render(story)
     end
 
@@ -123,9 +138,6 @@ module Pv
           name = make(s.name, :red)
           description = make(s.description, :white)
         end
-
-        # prefix = "* #{id}" + status
-        # say "#{prefix} #{story.name} #{author}"
 
         temp = <<HERE
 <%= "-"*60 %>
