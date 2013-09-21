@@ -7,4 +7,5 @@ group :test do
   gem 'rspec'
   gem 'vcr'
   gem 'webmock', '~> 1.8'
+  gem 'pry-full'
 end

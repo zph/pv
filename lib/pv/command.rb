@@ -1,4 +1,5 @@
 require 'thor'
+require 'tempfile'
 
 $VERBOSE = nil
 
@@ -18,6 +19,7 @@ module Pv
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
     def show story_id, output=STDOUT
       story = Story.find(story_id)
+      # output << (Story.find(story_id)
       full_render(story)
     end
 
@@ -67,13 +69,23 @@ module Pv
   private
     no_tasks do
       def preview story
-        transformer = options[:stdout] ? make : plain_make
-        id = transformer story.id, :YELLOW
-        author = transformer story.requested_by, :WHITE
-        status = if story.in_progress?
-          transformer " (#{story.current_state})", :BLUE
+        # transformer = options[:stdout] ? make : plain_make
+        if options[:stdout]
+          id = plain_make(story.id, :YELLOW)
+          author = plain_make(story.requested_by, :WHITE)
+          status = if story.in_progress?
+            plain_make(" (#{story.current_state})", :BLUE)
+          else
+            ""
+          end
         else
-          ""
+          id = make(story.id, :YELLOW)
+          author = make(story.requested_by, :WHITE)
+          status = if story.in_progress?
+            make(" (#{story.current_state})", :BLUE)
+          else
+            ""
+          end
         end
         prefix = "* #{id}" + status
 
