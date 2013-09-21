@@ -67,10 +67,11 @@ module Pv
   private
     no_tasks do
       def preview story
-        id = set_color "#{story.id}", Thor::Shell::Color::YELLOW
-        author = set_color story.requested_by, Thor::Shell::Color::WHITE
+        transformer = options[:stdout] ? make : plain_make
+        id = transformer story.id, :YELLOW
+        author = transformer story.requested_by, :WHITE
         status = if story.in_progress?
-          set_color " (#{story.current_state})", Thor::Shell::Color::BLUE
+          transformer " (#{story.current_state})", :BLUE
         else
           ""
         end
