@@ -80,16 +80,16 @@ module Pv
           end
         else
           id = make(story.id, :YELLOW)
-          author = make(story.requested_by, :WHITE)
+          author = make(story.requested_by, :cyan, true)
           status = if story.in_progress?
             make(" (#{story.current_state})", :BLUE)
           else
             ""
           end
         end
-        prefix = "* #{id}" + status
 
-        say "#{prefix} #{story.name} #{author}"
+        # TODO: sort by status
+        say [" #{id}", status, story.name, author].join(make( " | ", :red, true ))
       end
 
       def make(string, color, bold=false)
