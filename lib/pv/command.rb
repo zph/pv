@@ -1,8 +1,11 @@
 require 'thor'
 
+$VERBOSE = nil
+
 module Pv
   class Command < Thor
     include Thor::Actions
+    class_option :stdout, type: :boolean
 
     default_task :log
     desc :log,  "Show every story assigned to you on this project."
@@ -13,11 +16,9 @@ module Pv
     end
 
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
-    def show story_id
-      sha = Digest::HMAC.hexdigest story_id.to_s, Time.now.to_s, Digest::SHA1
-      File.write "/tmp/story-#{sha}", Story.find(story_id).render
-      system "$PAGER /tmp/story-#{sha}"
-      system "rm -rf /tmp/story-#{sha}"
+    def show story_id, output=STDOUT
+      story = Story.find(story_id)
+      full_render(story)
     end
 
     desc "edit STORY_ID STATUS", "Edit a story's status on this project."
@@ -76,6 +77,58 @@ module Pv
         prefix = "* #{id}" + status
 
         say "#{prefix} #{story.name} #{author}"
+      end
+
+      def make(string, color, bold=false)
+        set_color( string, Thor::Shell::Color.const_get(color.upcase.to_sym), bold)
+      end
+
+      def plain_make(string, color, bold=false)
+        set_color( string, Thor::Shell::Color::WHITE, bold)
+      end
+
+      def full_render story
+        s = story
+        if options[:stdout]
+          id = plain_make( "#{s.id}", :yellow )
+          points = plain_make( "#{s.estimate} points", :red )
+          author = plain_make(s.requested_by, :white)
+          status = story.in_progress? ? plain_make(s.current_state,:green) : ""
+          requester = plain_make(s.requested_by, :blue)
+          owner = plain_make(s.owned_by, :white)
+          type = plain_make(s.story_type.upcase, :red)
+          name = plain_make(s.name, :red)
+          description = plain_make(s.description, :white)
+        else
+          id = make( "#{s.id}", :yellow )
+          points = make( "#{s.estimate} points", :red, true )
+          author = make(s.requested_by, :white)
+          status = story.in_progress? ? make(s.current_state,:green, true) : ""
+          requester = make(s.requested_by, :blue)
+          owner = make(s.owned_by, :white)
+          type = make(s.story_type.upcase, :red)
+          name = make(s.name, :red)
+          description = make(s.description, :white)
+        end
+
+        # prefix = "* #{id}" + status
+        # say "#{prefix} #{story.name} #{author}"
+
+        temp = <<HERE
+<%= "-"*60 %>
+<%= type.titleize %>    <%= id %>   ( <%= points %> )
+Status:       <%= status.rjust(25) %>
+Requested By:  <%= requester.rjust(25) %>
+Assigned To:  <%= owner.rjust(25) %>
+
+<%= name %>
+
+<%= description %>
+<%= "-"*60 %>
+HERE
+        template = ERB.new(temp)
+        say template.result(binding)
+
       end
     end
   end
