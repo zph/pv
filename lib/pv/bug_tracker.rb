@@ -32,5 +32,10 @@ module Pv
       user = by_user_name || Pv.config.name
       @project.stories.all(owned_by: user).reject { |s| s.current_state =~ /accepted|delivered/ }
     end
+
+    # All stories
+    def story_by_id(id)
+      @project.stories.find(id)
+    end
   end
 end

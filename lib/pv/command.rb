@@ -18,13 +18,13 @@ module Pv
 
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
     def show story_id, output=STDOUT
-      story = Story.find(story_id)
+      story = Story.find_any_by_id(story_id)
       full_render(story)
     end
 
     desc "branch STORY_ID", "Create git branch and checkout based on story ID and desc."
     def branch story_id, output=STDOUT
-      story = Story.find(story_id) or raise "Error: Story not found"
+      story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
       initials = File.read(File.expand_path "~/.initials").split("\n").join("_")
       title = story.name.gsub(/[^A-Za-z0-9\/:\.,]/, '-').split(/\W+/).join('-').squeeze('-')
       a = ask "== Is the following title acceptable? {ENTER for yes}\n#{title}"

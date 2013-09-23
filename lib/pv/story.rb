@@ -18,6 +18,10 @@ module Pv
       new Pv.tracker.stories.select { |s| s.id == by_id.to_i }.first
     end
 
+    def self.find_any_by_id(id)
+      new Pv.tracker.story_by_id(id.to_i)
+    end
+
     # Build a new Pivotal story with the given attributes.
     def self.create from_attributes={}
       new Pv.tracker.project.stories.create from_attributes
