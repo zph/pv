@@ -11,7 +11,8 @@ module Pv
     default_task :log
     desc :log,  "Show every story assigned to you on this project."
     def log
-      Pv.tracker.stories.each do |from_data|
+      stories = Pv.tracker.stories.sort_by! { |h| h.current_state }
+      stories.each do |from_data|
         preview Story.new(from_data)
       end
     end
