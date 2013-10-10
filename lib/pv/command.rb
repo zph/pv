@@ -16,6 +16,14 @@ module Pv
       end
     end
 
+    desc :label,  "Show every story for a label (excluding accepted stories)."
+    def label(label = Pv.config.label)
+      stories = Pv.tracker.stories_by_label(label)
+      stories.reject { |i| i.accepted_at }.each do |from_data|
+        preview Story.new(from_data)
+      end
+    end
+
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
     def show story_id, output=STDOUT
       story = Story.find_any_by_id(story_id)
@@ -39,9 +47,8 @@ module Pv
     end
 
     desc "edit STORY_ID STATUS", "Edit a story's status on this project."
-    #method_option :message, default: "", alias: 'm'
     def edit story_id, status
-      story = Story.find(story_id) or raise "Error: Story not found"
+      story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
 
       if story.update(status)
         say "#{status.titleize} ##{story_id}"

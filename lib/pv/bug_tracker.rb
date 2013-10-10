@@ -37,5 +37,11 @@ module Pv
     def story_by_id(id)
       @project.stories.find(id)
     end
+
+    # All stories
+    def stories_by_label(label)
+      @project.stories.all(label: label)
+    end
+
   end
 end

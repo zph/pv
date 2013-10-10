@@ -2,14 +2,13 @@ require 'yaml'
 
 module Pv
   class Configuration
-    attr_reader :username, :password, :attributes, :project_id, :name
 
     def initialize
       @attributes = YAML::load_file from_path
-      @username = @attributes['username']
-      @password = @attributes['password']
-      @project_id = @attributes['project_id']
-      @name = @attributes['name']
+      @attributes.each do |k,v|
+        Configuration.send(:attr_accessor, k)
+        instance_variable_set("@#{k}", v)
+      end
     end
 
     def present?
