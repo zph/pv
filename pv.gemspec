@@ -18,6 +18,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_dependency 'pivotal-tracker', '0.5.10'
+  gem.add_dependency 'vcr'
+  gem.add_dependency 'webmock'
   gem.add_dependency 'thor'
   gem.add_dependency 'nokogiri-happymapper'
 end

@@ -38,7 +38,7 @@ module Pv
     # the dev machine, or is on stage and hasn't been pushed
     # to production yet.
     def in_progress?
-      if current_state =~ /\A(started|finished)\Z/
+      if current_state =~ /\A(started|finished|delivered)\Z/
         true
       else
         false

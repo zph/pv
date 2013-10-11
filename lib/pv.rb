@@ -7,6 +7,9 @@ require 'pv/version'
 require 'pv/bug_tracker'
 require 'pv/story'
 
+require 'vcr'
+
+
 module Pv
   # Load YAML configuration
   def self.config
@@ -25,4 +28,12 @@ module Pv
       spec.gem_dir
     end
   end
+end
+
+VCR.configure do |c|
+  c.cassette_library_dir = File.join(ENV['HOME'], ".pv_cache")
+  c.hook_into :webmock
+  c.default_cassette_options = { :re_record_interval => 60 }
+  c.filter_sensitive_data('<PASSWORD>') { Pv.config.password }
+  c.filter_sensitive_data('<EMAIL_ADDRESS>') { Pv.config.username }
 end

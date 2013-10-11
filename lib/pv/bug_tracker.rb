@@ -30,7 +30,7 @@ module Pv
     # Find stories filtered by this username.
     def stories by_user_name=nil
       user = by_user_name || Pv.config.name
-      @project.stories.all(owned_by: user).reject { |s| s.current_state =~ /accepted|delivered/ }
+      @project.stories.all(owned_by: user).reject { |s| s.current_state =~ /accepted/ }
     end
 
     # All stories

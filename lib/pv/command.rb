@@ -11,29 +11,38 @@ module Pv
     default_task :log
     desc :log,  "Show every story assigned to you on this project."
     def log
-      stories = Pv.tracker.stories.sort_by! { |h| h.current_state }
-      stories.each do |from_data|
-        preview Story.new(from_data)
+      VCR.use_cassette('log') do
+        stories = Pv.tracker.stories.sort_by! { |h| h.current_state }
+        stories.each do |from_data|
+          preview Story.new(from_data)
+        end
       end
     end
 
     desc :label,  "Show every story for a label (excluding accepted stories)."
     def label(label = Pv.config.label)
-      stories = Pv.tracker.stories_by_label(label)
-      stories.reject { |i| i.accepted_at }.each do |from_data|
-        preview Story.new(from_data)
+      VCR.use_cassette("label_#{label}") do
+        stories = Pv.tracker.stories_by_label(label)
+        stories.reject { |i| i.accepted_at }.each do |from_data|
+          preview Story.new(from_data)
+        end
       end
     end
 
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
     def show story_id, output=STDOUT
-      story = Story.find_any_by_id(story_id)
-      full_render(story)
+      VCR.use_cassette("story_#{story_id}") do
+        story = Story.find_any_by_id(story_id)
+        full_render(story)
+      end
     end
 
     desc "branch STORY_ID", "Create git branch and checkout based on story ID and desc."
     def branch story_id, output=STDOUT
-      story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
+
+      VCR.use_cassette("story_#{story_id}") do
+        story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
+      end
       initials = File.read(File.expand_path "~/.initials").split("\n").join("_")
       title = story.name.gsub(/[^A-Za-z0-9\/:\.,]/, '-').split(/\W+/).join('-').squeeze('-')
       a = ask "== Is the following title acceptable? {ENTER for yes}\n#{title}"
@@ -49,32 +58,41 @@ module Pv
 
     desc "edit STORY_ID STATUS", "Edit a story's status on this project."
     def edit story_id, status
-      story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
+      VCR.use_cassette("story_#{story_id}") do
+        story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
 
-      if story.update(status)
-        say "#{status.titleize} ##{story_id}"
-      else
-        say "Error: Story did not update."
+        if story.update(status)
+          say "#{status.titleize} ##{story_id}"
+        else
+          say "Error: Story did not update."
+        end
       end
     end
 
     %w(start finish deliver accept reject restart).each do |status|
       desc "#{status} STORY_ID", "#{status.titleize} a story on this project."
       define_method(status) do |story_id|
-        edit(story_id, "#{status}ed")
+
+        VCR.use_cassette("story_#{story_id}") do
+          edit(story_id, "#{status}ed")
+        end
       end
+
     end
 
     desc "create {bug|feature|chore} NAME", "Create a new story on this project"
     method_option :assign_to
     def create type, name
       with_attributes = options.merge(story_type: type, name: name)
-      story = Story.create with_attributes
+      VCR.use_cassette("story_#{type}") do
+        story = Story.create with_attributes
 
-      if story.saved?
-        say "Created #{type.titleize} ##{story.id}: '#{name}'"
-      else
-        say "Error saving #{type} with '#{name}'"
+        if story.saved?
+          say "Created #{type.titleize} ##{story.id}: '#{name}'"
+        else
+          say "Error saving #{type} with '#{name}'"
+        end
+
       end
     end
 
@@ -92,67 +110,53 @@ module Pv
   private
     no_tasks do
       def preview story
-        # transformer = options[:stdout] ? make : plain_make
-        if options[:stdout]
-          id = plain_make(story.id, :YELLOW)
-          author = plain_make(story.requested_by, :WHITE)
+        transformer = options[:stdout] ? :plain_make : :make
+          id = send(transformer, story.id, :YELLOW)
+          author = send(transformer, story.requested_by, :cyan, true)
           status = if story.in_progress?
-            plain_make(" (#{story.current_state})", :BLUE)
+            send(transformer, " (#{story.current_state})", STATUS_COLORS[story.current_state.to_sym])
           else
             ""
           end
-        else
-          id = make(story.id, :YELLOW)
-          author = make(story.requested_by, :cyan, true)
-          status = if story.in_progress?
-            make(" (#{story.current_state})", :BLUE)
-          else
-            ""
-          end
-        end
 
-        # TODO: sort by status
-        say [" #{id}", status, story.name, author].join(make( " | ", :red, true ))
+          leading_space = options[:stdout] ? "" : " "
+          say ["#{leading_space}#{id}", status, story.name, author].join(send(transformer, " | ", :red, true ))
       end
+
+      STATUS_COLORS = {
+        started: :CYAN,
+        finished: :BLUE,
+        delivered: :GREEN,
+        rejected: :RED,
+      }
 
       def make(string, color, bold=false)
         set_color( string, Thor::Shell::Color.const_get(color.upcase.to_sym), bold)
       end
 
       def plain_make(string, color, bold=false)
-        set_color( string, Thor::Shell::Color::WHITE, bold)
+        set_color( string, Thor::Shell::Color::WHITE, false)
       end
 
       def full_render story
         s = story
-        if options[:stdout]
-          id = plain_make( "#{s.id}", :yellow )
-          points = plain_make( "#{s.estimate} points", :red )
-          author = plain_make(s.requested_by, :white)
-          status = story.in_progress? ? plain_make(s.current_state,:green) : ""
-          requester = plain_make(s.requested_by, :blue)
-          owner = plain_make(s.owned_by, :white)
-          type = plain_make(s.story_type.upcase, :red)
-          name = plain_make(s.name, :red)
-          description = plain_make(s.description, :white)
-        else
-          id = make( "#{s.id}", :yellow )
-          points = make( "#{s.estimate} points", :red, true )
-          author = make(s.requested_by, :white)
-          status = story.in_progress? ? make(s.current_state,:green, true) : ""
-          requester = make(s.requested_by, :blue)
-          owner = make(s.owned_by, :white)
-          type = make(s.story_type.upcase, :red)
-          name = make(s.name, :red)
-          description = make(s.description, :white)
-        end
+        transformer = options[:stdout] ? :plain_make : :make
+          id = send(transformer, "#{s.id}", :yellow )
+          points = send(transformer, "#{s.estimate} points", :red )
+          author = send(transformer, s.requested_by, :white)
+          status = story.in_progress? ? send(transformer, s.current_state, STATUS_COLORS[s.current_state.to_sym]) : ""
+          requester = send(transformer, s.requested_by, :blue)
+          owner = send(transformer, s.owned_by, :white)
+          type = send(transformer, s.story_type.upcase, :red)
+          name = send(transformer, s.name, :red)
+          description = send(transformer, s.description, :white)
 
         temp = <<HERE
 <%= "-"*60 %>
 <%= type.titleize %>    <%= id %>   ( <%= points %> )
-Status:       <%= status.rjust(25) %>
-Requested By:  <%= requester.rjust(25) %>
-Assigned To:  <%= owner.rjust(25) %>
+Status:          <%= status.rjust(25) %>
+Requested By:    <%= requester.rjust(25) %>
+Assigned To:     <%= owner.rjust(25) %>
 
 <%= name %>
 
