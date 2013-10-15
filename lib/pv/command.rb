@@ -42,18 +42,19 @@ module Pv
 
       VCR.use_cassette("story_#{story_id}") do
         story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
-      end
-      initials = File.read(File.expand_path "~/.initials").split("\n").join("_")
-      title = story.name.gsub(/[^A-Za-z0-9\/:\.,]/, '-').split(/\W+/).join('-').squeeze('-')
-      a = ask "== Is the following title acceptable? {ENTER for yes}\n#{title}"
-      unless a.empty? || a =~ /y/i
-        title = ask "Enter a better title: > "
-      end
+        initials = File.read(File.expand_path "~/.initials").split("\n").join("_")
+        title = story.name.gsub(/[^A-Za-z0-9\/:\.,]/, '-').split(/\W+/).join('-').squeeze('-')
+        a = ask "== Is the following title acceptable? {ENTER for yes}\n#{title}"
+        unless a.empty? || a =~ /y/i
+          title = ask "Enter a better title: > "
+        end
 
-      command = "git checkout -b #{[initials, story_id, title].join('_')}"
+        command = "git checkout -b #{[initials, story_id, title].join('_')}"
 
-      system(command)
-      full_render(story)
+        system(command)
+        full_render(story)
+
+      end
     end
 
     desc "edit STORY_ID STATUS", "Edit a story's status on this project."
