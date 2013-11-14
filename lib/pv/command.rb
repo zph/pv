@@ -37,6 +37,22 @@ module Pv
       end
     end
 
+    desc "url STORY_ID", "Show the url to story on this project."
+    def url story_id, output=STDOUT
+      VCR.use_cassette("story_#{story_id}") do
+        story = Story.find_any_by_id(story_id)
+        output.puts story.url
+      end
+    end
+
+    desc "open STORY_ID", "Open a sorty in a browser."
+    def open story_id, output=STDOUT
+      VCR.use_cassette("story_#{story_id}") do
+        story = Story.find_any_by_id(story_id)
+        `open #{story.url}`
+      end
+    end
+
     desc "branch STORY_ID", "Create git branch and checkout based on story ID and desc."
     def branch story_id, output=STDOUT
 

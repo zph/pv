@@ -47,6 +47,14 @@ viewed in your `$PAGER`...
 
     I AM A BANANA!
 
+### pv url 123456
+
+Display the story's url.
+
+### pv open 123456
+
+Open the story in your browser (OS X only).
+
 ### pv edit 123456 -s {start|finish|deliver|accept|reject|restart|close} -m "message"
 
 Edits the status of a given story on Pivotal Tracker, with an optional message. The
