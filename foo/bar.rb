@@ -1,1 +1,1 @@
-BAREST='foo'
+BAREST = 'foo'

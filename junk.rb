@@ -1,5 +1,5 @@
 class Foo
-  def bar( opts={})
-    "junk"
+  def bar(_opts = {})
+    'junk'
   end
 end
