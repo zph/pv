@@ -1,1 +1,1 @@
-BAD_CONSTANT="file"
+BAD_CONSTANT = 'file'
