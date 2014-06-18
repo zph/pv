@@ -6,6 +6,8 @@ pv: pivotal tracker in the shell
 
   username: 'your-username'
   password: 'secret'
-  project_id: 123456
+  project_id:
+    - 123456
+    - 090345
 
   Then use the following commands to manage your project:

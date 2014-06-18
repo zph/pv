@@ -12,12 +12,12 @@ module Pv
       @password = and_password  || Pv.config.password
       @token = PivotalTracker::Client.token(username, password)
 
-      @project = begin
+      @projects = begin
         project_id = and_project_id || Pv.config.project_id
-        PivotalTracker::Project.all.select { |p| p.id == project_id }.first if @token.present?
+        PivotalTracker::Project.all.select { |p| project_id.include? p.id } if @token.present?
       end
 
-      raise "Project ##{and_project_id} not found." if @project.nil?
+      raise "Project ##{and_project_id} not found." if @projects.nil?
 
       PivotalTracker::Client.use_ssl = true
     end
@@ -30,17 +30,17 @@ module Pv
     # Find stories filtered by this username.
     def stories by_user_name=nil
       user = by_user_name || Pv.config.name
-      @project.stories.all(owned_by: user).reject { |s| s.current_state =~ /accepted/ }
+      @projects.flat_map { |p| p.stories.all(owned_by: user).reject { |s| s.current_state =~ /accepted/ } }
     end
 
     # All stories
     def story_by_id(id)
-      @project.stories.find(id)
+      @projects.flat_map { |p| p.stories.find(id) }.compact.first
     end
 
     # All stories
     def stories_by_label(label)
-      @project.stories.all(label: label)
+      @projects.map { |p| p.stories.all(label: label) }
     end
 
   end
