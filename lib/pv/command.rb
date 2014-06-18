@@ -65,7 +65,15 @@ module Pv
           title = ask "Enter a better title: > "
         end
 
-        command = "git checkout -b #{[initials, story_id, title].join('_')}"
+        new_branch = [initials, story_id, title].join('_')
+
+        check_for_branch = "git branch | grep #{new_branch}"
+        if system(check_for_branch)
+          puts "Branch: #{new_branch} already exists."
+          command = "git checkout #{new_branch}"
+        else
+          command = "git checkout -b #{new_branch}"
+        end
 
         system(command)
         full_render(story)

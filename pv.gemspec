@@ -22,4 +22,6 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'webmock'
   gem.add_dependency 'thor'
   gem.add_dependency 'nokogiri-happymapper'
+  gem.add_development_dependency 'rake'
+  gem.add_development_dependency 'bundler'
 end
