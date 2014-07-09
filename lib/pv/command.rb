@@ -21,7 +21,7 @@ module Pv
 
     desc :label,  "Show every story for a label (excluding accepted stories)."
     def label(label = Pv.config.label)
-      VCR.use_cassette("label_#{label}") do
+      VCR.use_cassette("label_#{label}_label") do
         stories = Pv.tracker.stories_by_label(label)
         stories.reject { |i| i.accepted_at }.each do |from_data|
           preview Story.new(from_data)
@@ -31,7 +31,7 @@ module Pv
 
     desc "show STORY_ID", "Show the full text and attributes of a story on this project."
     def show story_id, output=STDOUT
-      VCR.use_cassette("story_#{story_id}") do
+      VCR.use_cassette("story_#{story_id}_show") do
         story = Story.find_any_by_id(story_id)
         full_render(story)
       end
@@ -39,7 +39,7 @@ module Pv
 
     desc "url STORY_ID", "Show the url to story on this project."
     def url story_id, output=STDOUT
-      VCR.use_cassette("story_#{story_id}") do
+      VCR.use_cassette("story_#{story_id}_url") do
         story = Story.find_any_by_id(story_id)
         output.puts story.url
       end
@@ -47,7 +47,7 @@ module Pv
 
     desc "open STORY_ID", "Open a sorty in a browser."
     def open story_id, output=STDOUT
-      VCR.use_cassette("story_#{story_id}") do
+      VCR.use_cassette("story_#{story_id}_open") do
         story = Story.find_any_by_id(story_id)
         `open #{story.url}`
       end
@@ -56,7 +56,7 @@ module Pv
     desc "branch STORY_ID", "Create git branch and checkout based on story ID and desc."
     def branch story_id, output=STDOUT
 
-      VCR.use_cassette("story_#{story_id}") do
+      VCR.use_cassette("story_#{story_id}_branch") do
         story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
         initials = File.read(File.expand_path "~/.initials").split("\n").join("_")
         title = story.name.gsub(/[^A-Za-z0-9\/:\.,]/, '-').split(/\W+/).join('-').squeeze('-')
@@ -83,7 +83,7 @@ module Pv
 
     desc "edit STORY_ID STATUS", "Edit a story's status on this project."
     def edit story_id, status
-      VCR.use_cassette("story_#{story_id}") do
+      VCR.use_cassette("story_#{story_id}_#{status}") do
         story = Story.find_any_by_id(story_id) or raise "Error: Story not found"
 
         if story.update(status)
@@ -98,7 +98,7 @@ module Pv
       desc "#{status} STORY_ID", "#{status.titleize} a story on this project."
       define_method(status) do |story_id|
 
-        VCR.use_cassette("story_#{story_id}") do
+        VCR.use_cassette("story_#{story_id}_#{status}") do
           edit(story_id, "#{status}ed")
         end
       end
